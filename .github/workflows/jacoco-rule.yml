@@ -1,7 +1,7 @@
 name: jacoco-rule
 on:
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, dev ]
     
 permissions:
   pull-requests: write
