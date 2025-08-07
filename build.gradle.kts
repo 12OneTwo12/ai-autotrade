@@ -89,7 +89,11 @@ tasks.register<Copy>("buildDocument") {
     into(file("build/resources/main/static/docs"))
 }
 
-tasks.bootJar {
+tasks.named("bootJar") {
+    dependsOn("buildDocument")
+}
+
+tasks.named("resolveMainClassName") {
     dependsOn("buildDocument")
 }
 
