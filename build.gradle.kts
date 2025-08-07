@@ -30,7 +30,6 @@ extra["snippetsDir"] = file("build/generated-snippets")
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-batch")
-    implementation("org.springframework.boot:spring-boot-starter-jooq")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-web")
@@ -47,7 +46,6 @@ dependencies {
 
     // JOOQ 기본 런타임 라이브러리
     implementation("org.jooq:jooq:3.20.1")
-
     implementation("org.springframework.boot:spring-boot-starter-jooq") // jooq, Spring과 통합하는 경우 추가
 
     // JOOQ 코드 생성 관련 라이브러리
