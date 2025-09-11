@@ -6,80 +6,90 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import me.onetwo.aiautotrade.common.dto.LlmRequest
+import me.onetwo.aiautotrade.common.dto.LlmResponse
 import me.onetwo.aiautotrade.common.enums.LlmModel
 import me.onetwo.aiautotrade.common.enums.TradeAction
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutionException
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
- * VertexAiLlmService에 대한 단위 테스트
+ * DefaultLlmService에 대한 단위 테스트
  */
-class VertexAiLlmServiceTest {
+class DefaultLlmServiceTest {
 
+    private val llmProvider = mockk<LlmProvider>()
     private val promptTemplateService = mockk<PromptTemplateService>()
     private lateinit var objectMapper: ObjectMapper
-    private lateinit var llmService: VertexAiLlmService
+    private lateinit var llmService: DefaultLlmService
 
     @BeforeEach
     fun setUp() {
         objectMapper = ObjectMapper().registerModule(KotlinModule.Builder().build())
         
-        // 실제 Vertex AI 호출을 피하기 위해 테스트용 projectId 사용
-        llmService = VertexAiLlmService(
-            projectId = "test-project",
-            location = "us-central1",
+        every { llmProvider.getProviderName() } returns "test-provider"
+        every { llmProvider.isAvailable() } returns true
+        every { llmProvider.initialize() } returns Unit
+        every { llmProvider.shutdown() } returns Unit
+        
+        llmService = DefaultLlmService(
+            llmProvider = llmProvider,
             promptTemplateService = promptTemplateService,
             objectMapper = objectMapper
         )
     }
 
     @Test
-    fun `analyzeTradingSignal - 프롬프트 템플릿 서비스가 올바르게 호출되는지 확인`() {
+    fun `generateText - LLM 제공업체에게 요청을 전달한다`() {
         // Given
-        val marketData = mapOf("price" to 50000, "volume" to 1000000)
-        val technicalIndicators = mapOf("rsi" to 45.5, "macd" to 2.3)
-        val newsContext = listOf("긍정적인 실적 발표", "시장 상승 전망")
+        val request = LlmRequest(
+            prompt = "테스트 프롬프트",
+            model = LlmModel.GEMINI_1_5_PRO
+        )
+        val expectedResponse = LlmResponse(
+            content = "테스트 응답",
+            model = "gemini-1.5-pro"
+        )
         
-        val expectedPrompt = "테스트 프롬프트"
-        every { promptTemplateService.buildTradingAnalysisPrompt(marketData, technicalIndicators, newsContext) } returns expectedPrompt
-
-        // When & Then - Vertex AI 실제 호출 없이 프롬프트 생성만 테스트
-        // 실제 Vertex AI 호출은 통합 테스트에서 별도로 테스트
-        try {
-            llmService.analyzeTradingSignal(marketData, technicalIndicators, newsContext).get()
-        } catch (e: ExecutionException) {
-            // Vertex AI 호출 실패는 예상됨 (실제 인증 없음)
-            assertTrue(e.cause is RuntimeException)
-        }
+        every { llmProvider.generateText(request) } returns CompletableFuture.completedFuture(expectedResponse)
         
-        // 프롬프트 템플릿 서비스가 올바른 파라미터로 호출되었는지 검증
-        verify { promptTemplateService.buildTradingAnalysisPrompt(marketData, technicalIndicators, newsContext) }
+        // When
+        val result = llmService.generateText(request).get()
+        
+        // Then
+        assertEquals(expectedResponse.content, result.content)
+        assertEquals(expectedResponse.model, result.model)
+        verify { llmProvider.generateText(request) }
     }
 
     @Test
-    fun `generateMarketAnalysis - 프롬프트 템플릿 서비스가 올바르게 호출되는지 확인`() {
+    fun `analyzeTradingSignal - 프롬프트 생성 및 LLM 호출 테스트`() {
         // Given
-        val symbol = "005930" // 삼성전자
-        val timeframe = "1D"
-        val marketData = mapOf("price" to 70000, "volume" to 50000000)
+        val marketData = mapOf("price" to 50000, "volume" to 1000000)
+        val technicalIndicators = mapOf("rsi" to 45.5, "macd" to 2.3)
+        val newsContext = listOf("긍정적인 실적 발표")
         
-        val expectedPrompt = "시장 분석 프롬프트"
-        every { promptTemplateService.buildMarketAnalysisPrompt(symbol, timeframe, marketData) } returns expectedPrompt
-
-        // When & Then
-        try {
-            llmService.generateMarketAnalysis(symbol, timeframe, marketData).get()
-        } catch (e: ExecutionException) {
-            // Vertex AI 호출 실패는 예상됨
-            assertTrue(e.cause is RuntimeException || e.message?.contains("시장 분석을 생성할 수 없습니다") == true)
-        }
+        val expectedPrompt = "테스트 프롬프트"
+        val mockResponse = LlmResponse(
+            content = "{\"action\": \"BUY\", \"confidence\": 0.8, \"reason\": \"Test reason\"}",
+            model = "test-model"
+        )
         
-        // 프롬프트 템플릿 서비스가 올바른 파라미터로 호출되었는지 검증
-        verify { promptTemplateService.buildMarketAnalysisPrompt(symbol, timeframe, marketData) }
+        every { promptTemplateService.buildTradingAnalysisPrompt(marketData, technicalIndicators, newsContext) } returns expectedPrompt
+        every { llmProvider.generateText(any()) } returns CompletableFuture.completedFuture(mockResponse)
+        
+        // When
+        val result = llmService.analyzeTradingSignal(marketData, technicalIndicators, newsContext).get()
+        
+        // Then
+        assertEquals(TradeAction.BUY, result.action)
+        assertEquals(0.8, result.confidence)
+        verify { promptTemplateService.buildTradingAnalysisPrompt(marketData, technicalIndicators, newsContext) }
+        verify { llmProvider.generateText(any()) }
     }
 
     @Test
