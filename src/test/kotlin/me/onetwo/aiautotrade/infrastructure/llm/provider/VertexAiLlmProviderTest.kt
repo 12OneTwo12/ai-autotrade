@@ -4,6 +4,9 @@ import me.onetwo.aiautotrade.common.dto.LlmRequest
 import me.onetwo.aiautotrade.common.enums.LlmModel
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.time.Clock
+import java.time.ZoneId
+import java.util.concurrent.Executors
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -19,7 +22,9 @@ class VertexAiLlmProviderTest {
     fun setUp() {
         provider = VertexAiLlmProvider(
             projectId = "test-project",
-            location = "us-central1"
+            location = "us-central1",
+            executor = Executors.newVirtualThreadPerTaskExecutor(),
+            clock = Clock.system(ZoneId.systemDefault())
         )
     }
 

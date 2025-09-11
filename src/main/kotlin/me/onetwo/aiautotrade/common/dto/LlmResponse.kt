@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 data class LlmResponse(
     val content: String,
     val model: String,
-    val timestamp: LocalDateTime = LocalDateTime.now(),
+    val timestamp: LocalDateTime,
     val usage: Usage? = null,
     val metadata: Map<String, Any> = emptyMap()
 )

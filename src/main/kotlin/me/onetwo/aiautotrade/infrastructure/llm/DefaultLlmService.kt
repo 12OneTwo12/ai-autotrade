@@ -7,11 +7,12 @@ import me.onetwo.aiautotrade.trading.dto.TradingDecision
 import me.onetwo.aiautotrade.infrastructure.llm.LlmService
 import me.onetwo.aiautotrade.infrastructure.llm.PromptTemplateService
 import me.onetwo.aiautotrade.infrastructure.llm.LlmProvider
+import me.onetwo.aiautotrade.infrastructure.llm.exception.TradingDecisionParseException
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executor
-import java.util.concurrent.Executors
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import javax.annotation.PostConstruct
@@ -31,11 +32,11 @@ import javax.annotation.PreDestroy
 class DefaultLlmService(
     private val llmProvider: LlmProvider,
     private val promptTemplateService: PromptTemplateService,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
+    @Qualifier("llmExecutor") private val executor: Executor
 ) : LlmService {
 
     private val logger = LoggerFactory.getLogger(DefaultLlmService::class.java)
-    private val executor: Executor = Executors.newVirtualThreadPerTaskExecutor()
     
     @PostConstruct
     fun init() {
@@ -74,28 +75,32 @@ class DefaultLlmService(
         newsContext: List<String>
     ): CompletableFuture<TradingDecision> {
         return CompletableFuture.supplyAsync({
-            try {
-                val prompt = promptTemplateService.buildTradingAnalysisPrompt(
-                    marketData, technicalIndicators, newsContext
-                )
-                
-                val request = LlmRequest(
-                    prompt = prompt,
-                    temperature = 0.3f,
-                    maxTokens = 500
-                )
-                
-                val response = generateText(request).get()
-                parseTradingDecision(response.content)
-            } catch (e: Exception) {
-                logger.error("Error analyzing trading signal", e)
-                TradingDecision(
-                    action = TradeAction.HOLD,
-                    confidence = 0.0,
-                    reason = "Analysis failed: ${e.message}"
-                )
-            }
+            val prompt = promptTemplateService.buildTradingAnalysisPrompt(
+                marketData, technicalIndicators, newsContext
+            )
+            
+            val request = LlmRequest(
+                prompt = prompt,
+                temperature = 0.3f,
+                maxTokens = 500
+            )
+            
+            request
         }, executor)
+        .thenCompose { request ->
+            generateText(request)
+        }
+        .thenApply { response ->
+            parseTradingDecision(response.content)
+        }
+        .exceptionally { throwable ->
+            logger.error("Error analyzing trading signal", throwable)
+            TradingDecision(
+                action = TradeAction.HOLD,
+                confidence = 0.0,
+                reason = "Analysis failed: ${throwable.message}"
+            )
+        }
     }
 
     /**
@@ -112,21 +117,26 @@ class DefaultLlmService(
         marketData: Map<String, Any>
     ): CompletableFuture<String> {
         return CompletableFuture.supplyAsync({
-            try {
-                val prompt = promptTemplateService.buildMarketAnalysisPrompt(symbol, timeframe, marketData)
-                
-                val request = LlmRequest(
-                    prompt = prompt,
-                    temperature = 0.5f,
-                    maxTokens = 1000
-                )
-                
-                generateText(request).get().content
-            } catch (e: Exception) {
-                logger.error("Error generating market analysis", e)
-                "시장 분석을 생성할 수 없습니다: ${e.message}"
-            }
+            val prompt = promptTemplateService.buildMarketAnalysisPrompt(symbol, timeframe, marketData)
+            
+            val request = LlmRequest(
+                prompt = prompt,
+                temperature = 0.5f,
+                maxTokens = 1000
+            )
+            
+            request
         }, executor)
+        .thenCompose { request ->
+            generateText(request)
+        }
+        .thenApply { response ->
+            response.content
+        }
+        .exceptionally { throwable ->
+            logger.error("Error generating market analysis", throwable)
+            "시장 분석을 생성할 수 없습니다: ${throwable.message}"
+        }
     }
 
     /**
@@ -155,7 +165,7 @@ class DefaultLlmService(
                     takeProfitPrice = (parsed["takeProfitPrice"] as? Number)?.toDouble()
                 )
             } else {
-                throw IllegalArgumentException("No valid JSON found in response")
+                throw TradingDecisionParseException("No valid JSON found in response")
             }
         } catch (e: Exception) {
             logger.warn("Failed to parse trading decision JSON, using fallback parsing", e)

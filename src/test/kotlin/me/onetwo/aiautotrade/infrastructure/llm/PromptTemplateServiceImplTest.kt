@@ -61,8 +61,8 @@ class PromptTemplateServiceImplTest {
         assertNotNull(prompt)
         assertContains(prompt, "주식 자동매매 전문 AI 분석가")
         // 뉴스 섹션이 포함되지 않았는지 확인
-        assertTrue(prompt.contains("## 시장 데이터"))
-        assertTrue(prompt.contains("## 기술적 지표"))
+        assertTrue(prompt.contains("## 시장 데이터"), "Prompt should contain market data section")
+        assertTrue(prompt.contains("## 기술적 지표"), "Prompt should contain technical indicators section")
         // 빈 뉴스 컨텍스트의 경우 뉴스 섹션이 없어야 함
     }
 
@@ -136,8 +136,8 @@ class PromptTemplateServiceImplTest {
         val riskPrompt = promptTemplateService.buildRiskAnalysisPrompt(marketData, mapOf("volatility" to "LOW"))
 
         // Then
-        assertTrue(tradingPrompt.length > 100, "Trading prompt should be substantial")
-        assertTrue(marketPrompt.length > 100, "Market prompt should be substantial")
-        assertTrue(riskPrompt.length > 100, "Risk prompt should be substantial")
+        assertTrue(tradingPrompt.length > 100, "Trading prompt should be substantial but was ${tradingPrompt.length} characters")
+        assertTrue(marketPrompt.length > 100, "Market prompt should be substantial but was ${marketPrompt.length} characters")
+        assertTrue(riskPrompt.length > 100, "Risk prompt should be substantial but was ${riskPrompt.length} characters")
     }
 }

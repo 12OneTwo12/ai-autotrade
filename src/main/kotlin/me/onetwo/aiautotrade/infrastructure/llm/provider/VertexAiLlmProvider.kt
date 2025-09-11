@@ -9,13 +9,18 @@ import me.onetwo.aiautotrade.common.dto.LlmRequest
 import me.onetwo.aiautotrade.common.dto.LlmResponse
 import me.onetwo.aiautotrade.common.dto.Usage
 import me.onetwo.aiautotrade.infrastructure.llm.LlmProvider
+import me.onetwo.aiautotrade.infrastructure.llm.exception.LlmGenerationException
+import me.onetwo.aiautotrade.infrastructure.llm.exception.LlmInitializationException
+import me.onetwo.aiautotrade.infrastructure.llm.exception.LlmProviderUnavailableException
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
+import java.time.Clock
+import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executor
-import java.util.concurrent.Executors
 
 /**
  * Google Vertex AI LLM 제공업체 구현체
@@ -29,11 +34,12 @@ import java.util.concurrent.Executors
 @ConditionalOnProperty(name = ["llm.provider"], havingValue = "vertex-ai", matchIfMissing = true)
 class VertexAiLlmProvider(
     @Value("\${vertex.ai.project-id}") private val projectId: String,
-    @Value("\${vertex.ai.location:us-central1}") private val location: String
+    @Value("\${vertex.ai.location:us-central1}") private val location: String,
+    @Qualifier("llmExecutor") private val executor: Executor,
+    private val clock: Clock
 ) : LlmProvider {
 
     private val logger = LoggerFactory.getLogger(VertexAiLlmProvider::class.java)
-    private val executor: Executor = Executors.newVirtualThreadPerTaskExecutor()
     
     private var vertexAI: VertexAI? = null
     private var isInitialized = false
@@ -56,6 +62,7 @@ class VertexAiLlmProvider(
         } catch (e: Exception) {
             logger.error("Failed to initialize Vertex AI provider", e)
             isInitialized = false
+            throw LlmInitializationException("Failed to initialize Vertex AI provider", e)
         }
     }
 
@@ -85,7 +92,7 @@ class VertexAiLlmProvider(
     override fun generateText(request: LlmRequest): CompletableFuture<LlmResponse> {
         return CompletableFuture.supplyAsync({
             if (!isAvailable()) {
-                throw RuntimeException("Vertex AI provider is not available. Call initialize() first.")
+                throw LlmProviderUnavailableException("Vertex AI provider is not available. Call initialize() first.")
             }
 
             try {
@@ -117,12 +124,13 @@ class VertexAiLlmProvider(
                 LlmResponse(
                     content = responseText,
                     model = request.model.modelName,
+                    timestamp = LocalDateTime.now(clock),
                     usage = usage,
                     metadata = mapOf("provider" to getProviderName())
                 )
             } catch (e: Exception) {
                 logger.error("Error generating text with Vertex AI", e)
-                throw RuntimeException("Failed to generate text with Vertex AI", e)
+                throw LlmGenerationException("Failed to generate text with Vertex AI", e)
             }
         }, executor)
     }

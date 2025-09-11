@@ -11,8 +11,11 @@ import me.onetwo.aiautotrade.common.enums.LlmModel
 import me.onetwo.aiautotrade.common.enums.TradeAction
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutionException
+import java.util.concurrent.Executor
+import java.util.concurrent.Executors
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -39,7 +42,8 @@ class DefaultLlmServiceTest {
         llmService = DefaultLlmService(
             llmProvider = llmProvider,
             promptTemplateService = promptTemplateService,
-            objectMapper = objectMapper
+            objectMapper = objectMapper,
+            executor = Executors.newVirtualThreadPerTaskExecutor()
         )
     }
 
@@ -52,7 +56,8 @@ class DefaultLlmServiceTest {
         )
         val expectedResponse = LlmResponse(
             content = "테스트 응답",
-            model = "gemini-1.5-pro"
+            model = "gemini-1.5-pro",
+            timestamp = LocalDateTime.now()
         )
         
         every { llmProvider.generateText(request) } returns CompletableFuture.completedFuture(expectedResponse)
@@ -76,7 +81,8 @@ class DefaultLlmServiceTest {
         val expectedPrompt = "테스트 프롬프트"
         val mockResponse = LlmResponse(
             content = "{\"action\": \"BUY\", \"confidence\": 0.8, \"reason\": \"Test reason\"}",
-            model = "test-model"
+            model = "test-model",
+            timestamp = LocalDateTime.now()
         )
         
         every { promptTemplateService.buildTradingAnalysisPrompt(marketData, technicalIndicators, newsContext) } returns expectedPrompt

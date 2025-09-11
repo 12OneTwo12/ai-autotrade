@@ -5,6 +5,9 @@ import com.fasterxml.jackson.module.kotlin.KotlinModule
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import java.time.Clock
+import java.util.concurrent.Executor
+import java.util.concurrent.Executors
 
 /**
  * LLM 관련 설정 클래스
@@ -15,6 +18,16 @@ class LlmConfig {
     @Bean
     fun objectMapper(): ObjectMapper {
         return ObjectMapper().registerModule(KotlinModule.Builder().build())
+    }
+    
+    @Bean("llmExecutor")
+    fun llmExecutor(): Executor {
+        return Executors.newVirtualThreadPerTaskExecutor()
+    }
+    
+    @Bean
+    fun clock(): Clock {
+        return Clock.systemDefaultZone()
     }
 }
 

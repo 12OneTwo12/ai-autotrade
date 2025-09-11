@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
+import java.time.Clock
+import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -21,7 +23,8 @@ import java.util.concurrent.CompletableFuture
 @Component
 @ConditionalOnProperty(name = ["llm.provider"], havingValue = "openai")
 class OpenAiLlmProvider(
-    @Value("\${openai.api-key:}") private val apiKey: String
+    @Value("\${openai.api-key:}") private val apiKey: String,
+    private val clock: Clock
 ) : LlmProvider {
 
     private val logger = LoggerFactory.getLogger(OpenAiLlmProvider::class.java)
@@ -59,6 +62,7 @@ class OpenAiLlmProvider(
             LlmResponse(
                 content = "OpenAI implementation not available",
                 model = request.model.modelName,
+                timestamp = LocalDateTime.now(clock),
                 usage = Usage(0, 0, 0),
                 metadata = mapOf("provider" to getProviderName(), "status" to "not_implemented")
             )
