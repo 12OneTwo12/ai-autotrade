@@ -1,3 +1,20 @@
 spring:
   application:
     name: ai-auto-trade
+
+# LLM Configuration
+llm:
+  provider: ${LLM_PROVIDER:vertex-ai}  # vertex-ai, openai, claude 등
+  timeout-seconds: 30
+  retry-count: 3
+  default-model: GEMINI_1_5_PRO
+
+# Vertex AI Configuration
+vertex:
+  ai:
+    project-id: ${VERTEX_AI_PROJECT_ID:example-project-id}
+    location: ${VERTEX_AI_LOCATION:us-central1}
+
+# OpenAI Configuration (선택사항)
+openai:
+  api-key: ${OPENAI_API_KEY:}
