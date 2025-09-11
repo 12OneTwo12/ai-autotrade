@@ -39,14 +39,12 @@ class VertexAiLlmProviderTest {
     fun `initialize and shutdown - 라이프사이클 테스트`() {
         // When
         provider.initialize()
-        
-        // Then - 실제 인증 없이는 초기화 실패할 수 있음
-        // 이는 정상적인 동작이므로 테스트에서는 메서드 호출만 확인
+        // 인증이 없는 환경에서는 초기화가 실패할 수 있으므로 결과를 확인하지 않음
         
         // When
         provider.shutdown()
         
-        // Then
+        // Then - shutdown 후에는 항상 false여야 함
         assertFalse(provider.isAvailable())
     }
 

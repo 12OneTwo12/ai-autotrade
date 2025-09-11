@@ -65,10 +65,13 @@ class VertexAiLlmProvider(
     override fun shutdown() {
         try {
             vertexAI?.close()
-            isInitialized = false
-            logger.info("Vertex AI provider shutdown successfully")
         } catch (e: Exception) {
-            logger.error("Error during Vertex AI provider shutdown", e)
+            // 인증이 없는 환경에서는 shutdown 시에도 에러가 발생할 수 있음
+            logger.error("Error during Vertex AI provider shutdown (this is normal without credentials): {}", e.message)
+        } finally {
+            vertexAI = null
+            isInitialized = false
+            logger.info("Vertex AI provider shutdown completed")
         }
     }
 
