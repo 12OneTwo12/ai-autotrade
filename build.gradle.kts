@@ -53,6 +53,16 @@ dependencies {
     jooqCodegen("org.jooq:jooq-codegen:3.20.1")
     // DDLDatabase 지원 라이브러리 추가
     jooqCodegen("org.jooq:jooq-meta-extensions:3.20.1")
+
+    // Google Cloud Vertex AI
+    implementation("com.google.cloud:google-cloud-aiplatform:3.53.0")
+    implementation("com.google.cloud:google-cloud-vertexai:1.8.0")
+
+    // ArchUnit for architecture testing
+    testImplementation("com.tngtech.archunit:archunit-junit5:1.3.0")
+    
+    // MockK for Kotlin mocking
+    testImplementation("io.mockk:mockk:1.13.12")
 }
 
 kotlin {
