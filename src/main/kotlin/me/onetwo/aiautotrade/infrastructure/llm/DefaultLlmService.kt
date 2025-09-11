@@ -1,53 +1,52 @@
 package me.onetwo.aiautotrade.infrastructure.llm
 
-import com.google.cloud.vertexai.VertexAI
-import com.google.cloud.vertexai.api.GenerationConfig
-import com.google.cloud.vertexai.api.Part
-import com.google.cloud.vertexai.api.Content
-import com.google.cloud.vertexai.generativeai.GenerativeModel
 import me.onetwo.aiautotrade.common.dto.LlmRequest
 import me.onetwo.aiautotrade.common.dto.LlmResponse
-import me.onetwo.aiautotrade.common.dto.Usage
 import me.onetwo.aiautotrade.common.enums.TradeAction
 import me.onetwo.aiautotrade.trading.dto.TradingDecision
 import me.onetwo.aiautotrade.infrastructure.llm.LlmService
 import me.onetwo.aiautotrade.infrastructure.llm.PromptTemplateService
+import me.onetwo.aiautotrade.infrastructure.llm.LlmProvider
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import javax.annotation.PostConstruct
+import javax.annotation.PreDestroy
 
 /**
- * Google Vertex AI를 사용한 LLM 서비스 구현체
+ * LLM 서비스 구현체
  *
  * 주식 자동매매 시스템에서 AI 기반 분석 및 의사결정을 담당합니다.
- * Gemini 모델을 통해 시장 분석, 매매 신호 분석 등의 기능을 제공합니다.
+ * 다양한 LLM 제공업체를 통해 시장 분석, 매매 신호 분석 등의 기능을 제공합니다.
  *
- * @property projectId Google Cloud 프로젝트 ID
- * @property location Vertex AI 리전 (기본값: us-central1)
+ * @property llmProvider LLM 제공업체 (Vertex AI, OpenAI 등)
  * @property promptTemplateService 프롬프트 템플릿 관리 서비스
  * @property objectMapper JSON 직렬화/역직렬화를 위한 ObjectMapper
  */
 @Service
-class VertexAiLlmService(
-    @Value("\${vertex.ai.project-id}") private val projectId: String,
-    @Value("\${vertex.ai.location:us-central1}") private val location: String,
+class DefaultLlmService(
+    private val llmProvider: LlmProvider,
     private val promptTemplateService: PromptTemplateService,
     private val objectMapper: ObjectMapper
 ) : LlmService {
 
-    private val logger = LoggerFactory.getLogger(VertexAiLlmService::class.java)
+    private val logger = LoggerFactory.getLogger(DefaultLlmService::class.java)
     private val executor: Executor = Executors.newVirtualThreadPerTaskExecutor()
     
-    private val vertexAI: VertexAI by lazy {
-        VertexAI.Builder()
-            .setProjectId(projectId)
-            .setLocation(location)
-            .build()
+    @PostConstruct
+    fun init() {
+        llmProvider.initialize()
+        logger.info("LLM Service initialized with provider: {}", llmProvider.getProviderName())
+    }
+    
+    @PreDestroy
+    fun destroy() {
+        llmProvider.shutdown()
+        logger.info("LLM Service shutdown completed")
     }
 
     /**
@@ -55,46 +54,10 @@ class VertexAiLlmService(
      *
      * @param request LLM 요청 정보
      * @return 생성된 텍스트와 메타데이터를 포함한 응답
-     * @throws RuntimeException Vertex AI 호출 실패 시
+     * @throws RuntimeException LLM 호출 실패 시
      */
     override fun generateText(request: LlmRequest): CompletableFuture<LlmResponse> {
-        return CompletableFuture.supplyAsync({
-            try {
-                val model = GenerativeModel.Builder()
-                    .setModelName(request.model.modelName)
-                    .setVertexAi(vertexAI)
-                    .setGenerationConfig(
-                        GenerationConfig.newBuilder()
-                            .setTemperature(request.temperature)
-                            .setMaxOutputTokens(request.maxTokens)
-                            .build()
-                    )
-                    .build()
-
-                val content = Content.newBuilder()
-                    .setRole("user")
-                    .addParts(Part.newBuilder().setText(request.prompt))
-                    .build()
-
-                val response = model.generateContent(content)
-                val responseText = response.candidatesList.firstOrNull()?.content?.partsList?.firstOrNull()?.text ?: ""
-
-                val usage = Usage(
-                    promptTokens = response.usageMetadata?.promptTokenCount ?: 0,
-                    completionTokens = response.usageMetadata?.candidatesTokenCount ?: 0,
-                    totalTokens = response.usageMetadata?.totalTokenCount ?: 0
-                )
-
-                LlmResponse(
-                    content = responseText,
-                    model = request.model.modelName,
-                    usage = usage
-                )
-            } catch (e: Exception) {
-                logger.error("Error generating text with Vertex AI", e)
-                throw RuntimeException("Failed to generate text", e)
-            }
-        }, executor)
+        return llmProvider.generateText(request)
     }
 
     /**
