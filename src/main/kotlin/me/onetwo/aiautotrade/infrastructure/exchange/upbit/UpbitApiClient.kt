@@ -11,6 +11,7 @@ import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
 import reactor.core.publisher.Mono
 import java.math.BigInteger
+import java.net.URLEncoder
 import java.security.MessageDigest
 import java.util.*
 import javax.crypto.spec.SecretKeySpec
@@ -211,12 +212,14 @@ class UpbitApiClient(
      * 쿼리 스트링 생성
      *
      * @param params 파라미터 맵
-     * @return 쿼리 스트링
+     * @return 쿼리 스트링 (URL 인코딩 적용)
      */
     private fun buildQueryString(params: Map<String, Any?>): String {
         return params.entries
             .filter { it.value != null }
-            .joinToString("&") { "${it.key}=${it.value}" }
+            .joinToString("&") {
+                "${URLEncoder.encode(it.key, "UTF-8")}=${URLEncoder.encode(it.value.toString(), "UTF-8")}"
+            }
     }
 
     /**

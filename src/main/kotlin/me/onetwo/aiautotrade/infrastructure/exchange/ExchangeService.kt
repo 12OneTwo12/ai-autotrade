@@ -3,6 +3,7 @@ package me.onetwo.aiautotrade.infrastructure.exchange
 import me.onetwo.aiautotrade.common.dto.AccountInfo
 import me.onetwo.aiautotrade.common.dto.MarketPrice
 import me.onetwo.aiautotrade.common.dto.OrderResult
+import java.math.BigDecimal
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -35,7 +36,7 @@ interface ExchangeService {
      * @param volume 주문 수량
      * @return 주문 결과
      */
-    fun buy(market: String, price: java.math.BigDecimal?, volume: java.math.BigDecimal?): CompletableFuture<OrderResult>
+    fun buy(market: String, price: BigDecimal?, volume: BigDecimal?): CompletableFuture<OrderResult>
 
     /**
      * 매도 주문을 실행합니다.
@@ -45,7 +46,7 @@ interface ExchangeService {
      * @param volume 주문 수량
      * @return 주문 결과
      */
-    fun sell(market: String, price: java.math.BigDecimal?, volume: java.math.BigDecimal?): CompletableFuture<OrderResult>
+    fun sell(market: String, price: BigDecimal?, volume: BigDecimal?): CompletableFuture<OrderResult>
 
     /**
      * 주문을 취소합니다.

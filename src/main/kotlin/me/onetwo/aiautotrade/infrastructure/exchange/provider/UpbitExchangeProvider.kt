@@ -50,6 +50,8 @@ class UpbitExchangeProvider(
                     )
                 }
 
+                // TODO: 모든 자산을 KRW로 환산하여 총 자산 계산
+                // 현재는 KRW 잔액만 계산하며, 추후 코인 자산도 현재가 기준으로 KRW 환산 필요
                 val totalBalance = balances
                     .filter { it.currency == "KRW" }
                     .sumOf { it.balance + it.locked }
@@ -205,7 +207,7 @@ class UpbitExchangeProvider(
         "limit" -> OrderType.LIMIT
         "price" -> OrderType.PRICE
         "market" -> OrderType.MARKET
-        else -> OrderType.LIMIT
+        else -> throw IllegalArgumentException("Unknown order type from Upbit: $ordType")
     }
 
     /**
@@ -216,7 +218,7 @@ class UpbitExchangeProvider(
         "watch" -> OrderState.WATCH
         "done" -> OrderState.DONE
         "cancel" -> OrderState.CANCEL
-        else -> OrderState.WAIT
+        else -> throw IllegalArgumentException("Unknown order state from Upbit: $state")
     }
 
     /**
