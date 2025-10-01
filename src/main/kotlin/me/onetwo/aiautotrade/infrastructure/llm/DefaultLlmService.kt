@@ -21,7 +21,7 @@ import javax.annotation.PreDestroy
 /**
  * LLM 서비스 구현체
  *
- * 주식 자동매매 시스템에서 AI 기반 분석 및 의사결정을 담당합니다.
+ * 자동매매 시스템에서 AI 기반 분석 및 의사결정을 담당합니다.
  * 다양한 LLM 제공업체를 통해 시장 분석, 매매 신호 분석 등의 기능을 제공합니다.
  *
  * @property llmProvider LLM 제공업체 (Vertex AI, OpenAI 등)
@@ -62,7 +62,7 @@ class DefaultLlmService(
     }
 
     /**
-     * 주식 매매 신호를 분석하여 매매 결정을 제공합니다.
+     * 매매 신호를 분석하여 매매 결정을 제공합니다.
      *
      * @param marketData 시장 데이터 (가격, 거래량 등)
      * @param technicalIndicators 기술적 지표
@@ -104,9 +104,9 @@ class DefaultLlmService(
     }
 
     /**
-     * 특정 주식의 시장 분석 리포트를 생성합니다.
+     * 특정 종목의 시장 분석 리포트를 생성합니다.
      *
-     * @param symbol 주식 종목 코드
+     * @param symbol 종목 코드
      * @param timeframe 분석 시간 프레임
      * @param marketData 시장 데이터
      * @return AI가 생성한 시장 분석 리포트

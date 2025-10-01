@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service
 class PromptTemplateServiceImpl : PromptTemplateService {
 
     /**
-     * 주식 매매 분석을 위한 프롬프트를 생성합니다.
+     * 매매 분석을 위한 프롬프트를 생성합니다.
      *
      * @param marketData 시장 데이터 (가격, 거래량 등)
      * @param technicalIndicators 기술적 지표 (RSI, MACD, 이동평균 등)
@@ -23,7 +23,7 @@ class PromptTemplateServiceImpl : PromptTemplateService {
         val newsContextStr = newsContext.joinToString("\n- ") { it }
 
         return """
-            당신은 주식 자동매매 전문 AI 분석가입니다.
+            당신은 자동매매 전문 AI 분석가입니다.
             아래 정보를 바탕으로 매매 결정을 내려주세요.
 
             ## 시장 데이터
@@ -59,9 +59,9 @@ class PromptTemplateServiceImpl : PromptTemplateService {
     }
 
     /**
-     * 주식 시장 분석을 위한 프롬프트를 생성합니다.
+     * 시장 분석을 위한 프롬프트를 생성합니다.
      *
-     * @param symbol 분석할 주식 종목 코드
+     * @param symbol 분석할 종목 코드
      * @param timeframe 분석 시간 프레임 (1일, 1주, 1개월 등)
      * @param marketData 시장 데이터
      * @return 시장 분석을 위한 구조화된 프롬프트
@@ -74,7 +74,7 @@ class PromptTemplateServiceImpl : PromptTemplateService {
         val marketDataStr = marketData.entries.joinToString("\n") { "${it.key}: ${it.value}" }
 
         return """
-            당신은 주식 시장 분석 전문가입니다.
+            당신은 시장 분석 전문가입니다.
             다음 정보를 바탕으로 $symbol 종목의 시장 분석을 제공해주세요.
 
             ## 분석 대상
@@ -102,7 +102,7 @@ class PromptTemplateServiceImpl : PromptTemplateService {
     }
 
     /**
-     * 주식 포지션 리스크 분석을 위한 프롬프트를 생성합니다.
+     * 포지션 리스크 분석을 위한 프롬프트를 생성합니다.
      *
      * @param position 현재 보유 포지션 정보
      * @param marketConditions 현재 시장 상황
@@ -116,7 +116,7 @@ class PromptTemplateServiceImpl : PromptTemplateService {
         val marketConditionsStr = marketConditions.entries.joinToString("\n") { "${it.key}: ${it.value}" }
 
         return """
-            당신은 주식 리스크 관리 전문가입니다.
+            당신은 리스크 관리 전문가입니다.
             현재 포지션과 시장 상황을 분석하여 위험도를 평가해주세요.
 
             ## 현재 포지션
