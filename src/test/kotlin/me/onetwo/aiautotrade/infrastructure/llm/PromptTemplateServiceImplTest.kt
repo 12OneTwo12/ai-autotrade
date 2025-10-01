@@ -38,7 +38,7 @@ class PromptTemplateServiceImplTest {
 
         // Then
         assertNotNull(prompt)
-        assertContains(prompt, "주식 자동매매 전문 AI 분석가")
+        assertContains(prompt, "자동매매 전문 AI 분석가")
         assertContains(prompt, "currentPrice: 50000")
         assertContains(prompt, "rsi: 45.5")
         assertContains(prompt, "긍정적인 실적 발표")
@@ -59,7 +59,7 @@ class PromptTemplateServiceImplTest {
 
         // Then
         assertNotNull(prompt)
-        assertContains(prompt, "주식 자동매매 전문 AI 분석가")
+        assertContains(prompt, "자동매매 전문 AI 분석가")
         // 뉴스 섹션이 포함되지 않았는지 확인
         assertTrue(prompt.contains("## 시장 데이터"), "Prompt should contain market data section")
         assertTrue(prompt.contains("## 기술적 지표"), "Prompt should contain technical indicators section")
@@ -84,7 +84,7 @@ class PromptTemplateServiceImplTest {
 
         // Then
         assertNotNull(prompt)
-        assertContains(prompt, "주식 시장 분석 전문가")
+        assertContains(prompt, "시장 분석 전문가")
         assertContains(prompt, "005930")
         assertContains(prompt, "1D")
         assertContains(prompt, "openPrice: 70000")
@@ -114,7 +114,7 @@ class PromptTemplateServiceImplTest {
 
         // Then
         assertNotNull(prompt)
-        assertContains(prompt, "주식 리스크 관리 전문가")
+        assertContains(prompt, "리스크 관리 전문가")
         assertContains(prompt, "AAPL")
         assertContains(prompt, "quantity: 100")
         assertContains(prompt, "volatility: HIGH")

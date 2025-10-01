@@ -63,6 +63,14 @@ dependencies {
     
     // MockK for Kotlin mocking
     testImplementation("io.mockk:mockk:1.13.12")
+
+    // JWT for Upbit API authentication
+    implementation("io.jsonwebtoken:jjwt-api:0.12.3")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.3")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.3")
+
+    // WebFlux for reactive HTTP client
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
 }
 
 kotlin {
